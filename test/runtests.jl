@@ -8,3 +8,6 @@ landmark_data = read_landmarks("C:/Users/imidi/.julia/dev/AutoLM.jl/test/test_da
 @testset "AutoLM.jl" begin
     aligned, aligned_lm, reco = align_principal(image_data, landmark_data, 192)
 end
+
+
+push!(LOAD_PATH, "C:/Users/immanueldiener/.julia/dev")
