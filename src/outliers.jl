@@ -22,6 +22,12 @@ function response_distribution(model, X, lms, samples)
   return means, st_dev
 end
 
+"""
+    to_3d_array(arr)
+
+Takes a 2D landmark array for 3 dimensions as input and outputs a 3D array
+with dimensions [n_points x 3 x n_individuals]
+"""
 function to_3d_array(arr)
   arr_out = zeros(convert(Int32, size(arr, 1)/3),3,size(arr,2))
   counter = 1
@@ -34,6 +40,12 @@ function to_3d_array(arr)
   return arr_out
 end
 
+"""
+    align_all(arr)
+
+Performs procrustes alignment on all the landmarks over all the individuals
+in a 3D landmark array as returned by the function to_3d_array().
+"""
 function align_all(arr)
   ref = arr[:,:,1]
   out = deepcopy(arr)
@@ -43,6 +55,13 @@ function align_all(arr)
   return out
 end
 
+"""
+    to_2d_array(arr)
+
+converts a 3D landmark array to a 2D landmark array with dimensions
+[coordinates x individuals] where coordinates are x,y,z coordinates
+repeated as many times as there are landmarks.
+"""
 function to_2d_array(arr)
   n_lms = size(arr, 1)
   out = zeros(n_lms*3, size(arr, 3))
@@ -54,6 +73,12 @@ function to_2d_array(arr)
   return out
 end
 
+"""
+    mean_shape(arr)
+
+finds the mean shape of all teh individuals in a 3D landmark array. Procrustes
+alignment should be performed before finding the mean.
+"""
 function mean_shape(arr)
   n_points = size(arr, 1)
   mean_shape = zeros(n_points, 3)
@@ -65,6 +90,12 @@ function mean_shape(arr)
   return mean_shape
 end
 
+"""
+    proc_distance(ref, arr)
+
+returns the procrustes distances to a reference (e.g. the mean shape)
+for every individual in a 3D landmark array.
+"""
 function proc_distance(ref, arr)
   n_inds = size(arr, 3)
   n_points = size(arr, 1)
@@ -79,6 +110,12 @@ function proc_distance(ref, arr)
   return dists
 end
 
+"""
+    procrustes_distance_list(arr, names, exclude_highest=false)
+
+returns the procrustes distances to a reference (e.g. the mean shape)
+for every individual in a 3D landmark array.
+"""
 function procrustes_distance_list(arr, names, exclude_highest=false)
   n_inds = size(arr, 2)
   percentile_list = zeros(1,n_inds)
@@ -130,6 +167,21 @@ function procrustes_distance_list(arr, names, exclude_highest=false)
   return out
 end
 
+"""
+  function align(x,y) -> xnew
+  aligns two structures [sets of points in 3D space]. Solves
+  the "Procrustes" problem. Structures are expected to be of the same size, and the
+  correspondence is assumed from the vector indices.
+
+  Returns x aligned, by performing the rigid body transformation [rotation
+  and translation that minimizes the RMSD between x and y].
+
+  x, y, and xnew (return) are matrices of dimensions (n,3)
+  (n is the number of points, 3 is the dimension of the space).
+
+  L. Martinez, Institute of Chemistry - University of Campinas
+  Jan 04, 2019
+"""
 function align( x :: Matrix{Float64}, y :: Matrix{Float64} )
 
   n = size(x,1)
