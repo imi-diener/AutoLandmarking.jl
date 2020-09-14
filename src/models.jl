@@ -1,7 +1,7 @@
 using Flux
 
 vgg19 = Chain(
-  Conv((3, 3), 12 => 64, relu, pad=(1, 1), stride=(1, 1)),
+  Conv((3, 3), 6 => 64, relu, pad=(1, 1), stride=(1, 1)),
   BatchNorm(64),
   Conv((3, 3), 64 => 64, relu, pad=(1, 1), stride=(1, 1)),
   BatchNorm(64),

@@ -5,8 +5,13 @@ include("data_preparation.jl")
 include("handling_and_utility.jl")
 include("models.jl")
 include("outliers.jl")
+include("custom_data_loading.jl")
 # Write your package code here.
 export
+    # data loading
+    load_imgs,
+    read_landmarks,
+
     #data augmentation
     flip_volume_side,
     flip_volume_front,

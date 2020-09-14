@@ -5,7 +5,7 @@ import Images
 load the image data from the prepared data. This is a custom function
 designed to read data stored in this specific fashion
 """
-function load_imgs(path, dims)
+function load_imgs(path, dims, numerical)
     inds = 0
     for (root, dirs, files) in walkdir(path)
         if length(dirs) != 0
@@ -19,7 +19,9 @@ function load_imgs(path, dims)
           push!(vol_names, dirs[ind])
             ind_path = joinpath(path, dirs[ind])
             items = readdir(ind_path)
-            # sort!(items, by=x->parse(Int,split(x, ".")[1]))
+            if numerical
+                sort!(items, by=x->parse(Int,split(x, ".")[1]))
+            end
             for i in items
                 if i[end-3:end] != ".tif"
                     deleteat!(items, findall(x->x==i, items))

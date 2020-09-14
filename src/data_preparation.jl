@@ -169,7 +169,6 @@ function landmark_to_surface(volumes, landmarks, radius)
           nearest[1] = p
         end
       end
-      println(ind)
       lm_out[point*3-2, ind] = (points_in_area[nearest[1]][1] + lm_coord[point, 1]-radius)/10
       lm_out[point*3-1, ind] = (points_in_area[nearest[1]][2] + lm_coord[point, 2]-radius)/10
       lm_out[point*3, ind] = (points_in_area[nearest[1]][3] + lm_coord[point, 3]-radius)/10
