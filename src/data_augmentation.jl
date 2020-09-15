@@ -195,51 +195,34 @@ Jitters around binarized volumes based on their corresponding x/y landmarks, so 
 the relevant object (smaller voxel value) will still be fully inside the volume but
 moved around randomly inside the volume.
 """
-function jitter_3D(volumes, landmarks)
-  lm_out = deepcopy(landmarks)
-  inds = size(volumes, 4)
-  out = zeros(size(volumes, 1), size(volumes, 2), size(volumes, 3), inds)
-  maxi = maximum(volumes[:,:,:,1])
-  mini = minimum(volumes[:,:,:,1])
-  Threads.@threads for ind in 1:inds
-    image = volumes[:,:,:,ind]
-    points = findall(x->x!=maxi, image)
-    coordinates = zeros(length(points), 3)
-    for i in 1:length(points)
-        for j in 1:3
-            coordinates[i,j] = points[i][j]
-        end
-    end
-    landm = landmarks[:, ind]
-    n_points = floor(Int, length(landm)/3)
-    coordinates_lm = zeros(n_points, 3)
-    for i in 1:n_points
-        for j in 1:3
-            coordinates_lm[i,j] = landm[3*i-(3-j)]
-        end
-    end
-    lm_coord = coordinates_lm .*10
-    jitterx = rand(-(minimum(coordinates[:,1])-1):(size(image,1)-maximum(coordinates[:,1])))
-    jittery = rand(-(minimum(coordinates[:,2])-1):(size(image,2)-maximum(coordinates[:,2])))
-    jitterz = rand(-(minimum(coordinates[:,3])-1):(size(image,3)-maximum(coordinates[:,3])))
-    coordinates[:,1] .+= jitterx
-    lm_coord[:,1] .+= jitterx
-    coordinates[:,2] .+= jittery
-    lm_coord[:,2] .+= jittery
-    coordinates[:,3] .+= jitterz
-    lm_coord[:,3] .+= jitterz
-    coordinates = floor.(Int, coordinates)
-    for pnt in 1:size(coordinates, 1)
-        out[coordinates[pnt, 1], coordinates[pnt, 2], coordinates[pnt, 3], ind] = mini
-    end
-    for i in 1:n_points
-        for j in 1:3
-            lm_out[3*i-(3-j), ind] = lm_coord[i, j]
-        end
-    end
-    end
-  change_values!(out, 0.0, maxi, ==)
-  return Float32.(out), lm_out ./ 10
+function jitter_3D(volumes, landmarks, padding)
+  coordinates = to_3d_array(landmarks)
+  out = deepcopy(volumes)
+  Threads.@threads for ind in 1:size(landmarks, 2)
+    filler = maximum(volumes[:,:,:,ind])
+    size_x = size(volumes[:,:,:,ind], 1)
+    size_y = size(volumes[:,:,:,ind], 2)
+    size_z = size(volumes[:,:,:,ind], 3)
+    min_x = max(0, minimum(coordinates[:,1,ind]) * 10 - padding)
+    max_x = min(size_x, maximum(coordinates[:,1,ind]) * 10 + padding)
+    min_y = max(0, minimum(coordinates[:,2,ind]) * 10 - padding)
+    max_y = min(size_y, maximum(coordinates[:,2,ind]) * 10 + padding)
+    min_z = max(0, minimum(coordinates[:,3,ind]) * 10 - padding)
+    max_z = min(size_z, maximum(coordinates[:,3,ind]) * 10 + padding)
+    jitter_x = rand(-floor(Int, min_x):(size_x-floor(Int, max_x)))
+    jitter_y = rand(-floor(Int, min_y):(size_y-floor(Int, max_y)))
+    jitter_z = rand(-floor(Int, min_z):(size_z-floor(Int, max_z)))
+    out[:,:,:,ind] .= filler
+    out[max(1, jitter_x+1):min(size_x, size_x+jitter_x), max(1, jitter_y+1):min(size_y, size_y+jitter_y),
+      max(1, jitter_z+1):min(size_z, size_z+jitter_z), ind] .= volumes[max(1, -jitter_x+1):min(size_x, size_x-jitter_x),
+      max(1, -jitter_y+1):min(size_y, size_y-jitter_y),
+        max(1, -jitter_z+1):min(size_z, size_z-jitter_z), ind]
+    coordinates[:,1,ind] .= coordinates[:,1,ind] .+ jitter_x/10
+    coordinates[:,2,ind] .= coordinates[:,2,ind] .+ jitter_y/10
+    coordinates[:,3,ind] .= coordinates[:,3,ind] .+ jitter_z/10
+  end
+  lms_out = to_2d_array(coordinates)
+  return out, lms_out
 end
 
 """

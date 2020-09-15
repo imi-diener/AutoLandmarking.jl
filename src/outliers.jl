@@ -66,8 +66,8 @@ function to_2d_array(arr)
   n_lms = size(arr, 1)
   out = zeros(n_lms*3, size(arr, 3))
   for i in 1:size(arr, 3)
-    for l in 1:3
-      out[(l-1)*n_lms+1:l*n_lms, i] = arr[:,l,i]
+    for l in 1:n_lms
+      out[l*3-2:l*3, i] = arr[l,:,i]
     end
   end
   return out
