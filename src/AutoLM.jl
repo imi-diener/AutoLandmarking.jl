@@ -44,6 +44,7 @@ export
     #confidence testing and exporting
     save_vols_to_folder,
     response_distribution,
-    procrustes_distance_list
+    procrustes_distance_list,
+    writedlm
 
 end
