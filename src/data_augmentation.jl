@@ -234,7 +234,10 @@ Returns rotated image and adjusted landmarks.
 """
 function rotate_2d(img, lms, deg)
   deg = deg*pi/180
-  out = Images.imrotate(img, -deg, axes(img))
+  rotated = Images.imrotate(img, -deg)
+  size_x = size(rotated, 1)
+  size_y = size(rotated, 2)
+  out = Images.imresize(rotated, (size(img, 1), size(img, 2)))
   n_points = floor(Int, length(lms)/2)
   coords = zeros(2,n_points)
   coords_out = zeros(n_points*2, 1)
@@ -245,8 +248,8 @@ function rotate_2d(img, lms, deg)
   coords[1,:] = coords[1,:] .- (size(img,1)/2)/10
   coords[2,:] = coords[2,:] .- (size(img,2)/2)/10
   for i in 1:n_points
-    coords_out[i*2-1] = coords[1,i]*cos(deg) - coords[2,i]*sin(deg) + (size(img,1)/2)/10
-    coords_out[i*2] = coords[1,i]*sin(deg) + coords[2,i]*cos(deg) + (size(img,2)/2)/10
+    coords_out[i*2-1] = (coords[1,i]*cos(deg) - coords[2,i]*sin(deg) + (size_x/2)/10) * size(img,1)/size_x
+    coords_out[i*2] = (coords[1,i]*sin(deg) + coords[2,i]*cos(deg) + (size_y/2)/10) * size(img,2)/size_y
   end
   return out, coords_out
 end
@@ -297,9 +300,10 @@ function rotate_volumes(vols, lms, deg)
         out[:,:,img,i] .= rotated
         x_y_rotated[:,i] .= rotated_lms[:,1]
       else
-        rotated_img = Images.imrotate(vols[:,:,img,i], -deg*pi/180, axes(vols[:,:,img,i]))
-        rotated_img[findall(x->isnan(x)==true, rotated_img)] .= filler
-        out[:,:,img,i] .= rotated_img
+        rotated_img = Images.imrotate(vols[:,:,img,i], -deg*pi/180)
+        rotated = Images.imresize(rotated_img, (size(vols, 1), size(vols, 2)))
+        rotated[findall(x->isnan(x)==true, rotated)] .= filler
+        out[:,:,img,i] .= rotated
       end
     end
   end
