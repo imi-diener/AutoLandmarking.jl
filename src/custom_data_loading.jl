@@ -83,5 +83,5 @@ function read_landmarks(path, num_landmarks, group)
             end
         end
     end
-    return coordinates'
+    return convert(Array, coordinates')
 end
