@@ -7,4 +7,4 @@ procrustes alignment function can be used to estimate the prediction accuracy on
 
 
 ## Tutorial
-A typical workflow with a 3D dataset can be found in the [demo file](../demo.jl). Most functions work with either 2D or 3D data. If not, the package usually includes separate functions to handle either 2D or 3D data. The intended use case is always made clear in the name of the function. Detailed documentation is included with every function.
+A typical workflow with a 3D dataset can be found in the [demo file](../master/demo.jl). Most functions work with either 2D or 3D data. If not, the package usually includes separate functions to handle either 2D or 3D data. The intended use case is always made clear in the name of the function. Detailed documentation is included with every function.
