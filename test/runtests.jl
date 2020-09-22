@@ -35,6 +35,3 @@ using JLD
     @test solution_depthmaps == depthmaps
 
 end
-
-
-push!(LOAD_PATH, "C:/Users/immanueldiener/.julia/dev")
