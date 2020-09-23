@@ -1,6 +1,6 @@
 import Images
 """
-    load_imgs(path, dims)
+    load_imgs(path, dims, numerical)
 
 Reads all the volume images of an entire directory. Data must be stored as follows:
 The required input "path" is the path to a directory containing one sub-directory
