@@ -8,3 +8,6 @@ procrustes alignment function can be used to estimate the prediction accuracy on
 
 ## Tutorial
 A typical workflow with a 3D dataset can be found in the [demo file](../master/demo.jl). Most functions work with either 2D or 3D data. If not, the package usually includes separate functions to handle either 2D or 3D data. The intended use case is always made clear in the name of the function. Detailed documentation is included with every function.
+
+## Landmark format
+All the functions are designed to work with the landmarking format used by the Avizo software. A short example: Say we have a volume with the size 128x128x128 voxels and say we have a landmark at the location (x=40, y=55, z=32) with each coordinate being the number of voxel lengths in that dimension. In this case the landmarks would be x=4.0, y=5.5, z=3.2. In short, coordinates are the number of voxel lengths from the origin (0,0,0) in any dimension divided by 10. Any other format will not work wit most of the functions.
