@@ -5,6 +5,7 @@ using Base.Threads
 using MultivariateStats
 using Statistics
 using Flux
+using CuArrays
 """
     accuracy(x, y, modell)
 
@@ -79,8 +80,12 @@ containing 2d image data.
 """
 function cost_whole_data_2D(x, y)
   costs = []
-  for i in 1:size(y)[2]
-    push!(costs, cost(x[:,:,:,i:i], y[:,i:i]))
+  for i in 1:4:size(y)[2]
+    if i+3>size(y, 2)
+      push!(costs, cost(x[:,:,:,i:end], y[:,i:end]))
+    else
+      push!(costs, cost(x[:,:,:,i:i+3], y[:,i:i+3]))
+    end
   end
   return sum(costs)
 end
