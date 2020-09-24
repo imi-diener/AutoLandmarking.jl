@@ -1,5 +1,11 @@
 using Flux
 
+
+"""
+    vgg19
+
+returns the vgg19 model
+"""
 vgg19 = Chain(
   Conv((3, 3), 6 => 64, relu, pad=(1, 1), stride=(1, 1)),
   BatchNorm(64),

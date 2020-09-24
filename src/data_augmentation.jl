@@ -83,13 +83,13 @@ function mirror_vol(x, y)
 end
 
 """
-    flip(x, y)
+  flip_2D(x, y)
 
 Takes 2D images in a 4D tensor and landmark data in 2D tensor and returns
 the original images together with the flipped (clockwise) images, aswell
 as the coordinates for the original and the flipped images.
 """
-function flip(x, y)
+function flip_2D(x, y)
   copyx = zeros(Float32, size(x, 2),size(x, 1),size(x, 3),size(x, 4))
   copyy = y
   copyx = cat(x, copyx, dims=length(size(x)))
@@ -189,7 +189,7 @@ end
 # end
 
 """
-    jitter_3D(x, y)
+    jitter_3D(volumes, landmarks, padding)
 
 Jitters around binarized volumes based on their corresponding x/y landmarks, so that
 the relevant object (smaller voxel value) will still be fully inside the volume but

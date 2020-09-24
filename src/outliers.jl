@@ -168,19 +168,20 @@ function procrustes_distance_list(arr, names, exclude_highest=false)
 end
 
 """
-  function align(x,y) -> xnew
-  aligns two structures [sets of points in 3D space]. Solves
-  the "Procrustes" problem. Structures are expected to be of the same size, and the
-  correspondence is assumed from the vector indices.
+  function align(x,y)
 
-  Returns x aligned, by performing the rigid body transformation [rotation
-  and translation that minimizes the RMSD between x and y].
+aligns two structures [sets of points in 3D space]. Solves
+the "Procrustes" problem. Structures are expected to be of the same size, and the
+correspondence is assumed from the vector indices.
 
-  x, y, and xnew (return) are matrices of dimensions (n,3)
-  (n is the number of points, 3 is the dimension of the space).
+Returns x aligned, by performing the rigid body transformation [rotation
+and translation that minimizes the RMSD between x and y].
 
-  L. Martinez, Institute of Chemistry - University of Campinas
-  Jan 04, 2019
+x, y, and xnew (return) are matrices of dimensions (n,3)
+(n is the number of points, 3 is the dimension of the space).
+
+L. Martinez, Institute of Chemistry - University of Campinas
+Jan 04, 2019
 """
 function align( x :: Matrix{Float64}, y :: Matrix{Float64} )
 

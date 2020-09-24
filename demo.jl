@@ -3,14 +3,19 @@ using Flux
 using CuArrays
 import ImageView
 
-push!(LOAD_PATH, "C:/Users/immanueldiener/.julia/dev")
+push!(LOAD_PATH, Base.@__DIR__)
 
 # Import data with custom import functions
+<<<<<<< HEAD
 image_data, imname = load_imgs("C:/Users/immanueldiener/Desktop/Master/scripts/no_enamel", (128,128,128), false)
 landmark_data = read_landmarks("C:/Users/immanueldiener/Desktop/Master/scripts/no_enamel", 10, "@1")
 
 # X and Y coordinates are swapped in avizo files, wo I'll swap them back here.
 #this step is essential for all the data augmentation to work.
+=======
+image_data, imname = load_imgs("C:/Users/imidi/Desktop/Master/scripts/auto-landmarking/no_enamel", (128,128,128), false)
+landmark_data = read_landmarks("C:/Users/imidi/Desktop/Master/scripts/auto-landmarking/no_enamel", 10, "@1")
+>>>>>>> f0ff152bba7cefcd9832c8a02e10cba9a4b483c0
 landmark_data = swap_xy(landmark_data)
 
 #some images have a higher value in the fill voxels than in the actual object voxels. This will fix the issue.
@@ -32,7 +37,6 @@ lms = cat(landmark_data, landmark_data2, dims=2)
 
 #put all the landmarks that are not yet on the surface of an object onto the landmark
 lms_on_surface = landmark_to_surface(images, lms, 10)
-
 
 #define training and testing sets
 X_train = images[:,:,:,setdiff(1:243,86:125)]
@@ -173,3 +177,29 @@ for i in 1:300
     break
   end
 end
+
+
+# ================== After training ===================
+
+
+#solve issue with arrays inside vector
+aks = []
+for i in accs
+  push!(aks, i[1])
+end
+
+# check what the best accuracy is
+minimum(aks)
+
+#plot the development of cost and accuracy
+import Plots
+Plots.plot(aks, legend=:topright, label="sum of deviations per point", color= :red, xlabel="epochs", ylabel = "acuracy")
+plt = Plots.plot!(Plots.twinx(), costs, label="training loss", legend=:bottomright, ylabel = "loss")
+
+# check for outliers (greatest distance from the procrustes mean).
+# teh idea is to eliminate out all the predicted landmark sets that
+# deviate a lot from the procrustes mean (reference), since these are
+# most likely bad predictions. do get the procrustes mean, we can use training
+# testing data together to get a more accureate mean. This is an ideal approch
+# because otherwise we would not realize if all the predictions are biased in some
+# way that is congruent over all predictions but still wrong.

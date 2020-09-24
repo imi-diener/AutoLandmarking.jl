@@ -1,9 +1,18 @@
 import Images
 """
-    load_imgs(path, dims)
+    load_imgs(path, dims, numerical)
 
-load the image data from the prepared data. This is a custom function
-designed to read data stored in this specific fashion
+Reads all the volume images of an entire directory. Data must be stored as follows:
+The required input "path" is the path to a directory containing one sub-directory
+for every volume that has to be read. Each sub-directory contains the images making
+up one volume in .tif format. if the image names contain alphabetical characters
+(e.g. image001.tif, image002.tif ect.) the variable "numerical" has to be set to false, if
+the image names are just numerical values (e.g 1.tif, 2.tif, 3.tif, ect), it has to
+be set to true. Any file not ending in .tif will not be read.
+
+Data will be stored in a 4D array [a x b c x n] with n being the number of
+sub-directories, a and b the resolution of the .tif images and c the number of
+images. The the resolution of the images has to be the same over all the volumes.
 """
 function load_imgs(path, dims, numerical)
     inds = 0
@@ -44,7 +53,14 @@ end
 """
     read_landmarks(path, num_landmarks, group)
 
-General function to read avizo landmark data into an array
+Specific function to read avizo landmark data into an array.
+Reads all the files ending in .Ascii in the directory specified
+as "path". Data will be stored in a 2D array [c x n] with c being the
+number of individual 3D coordinates (30 coordinates in the case of 10 landmarks)
+and n being the number of landmark files read.
+
+The variable Group specifies the group of landmarks in the Avizo file that has
+to be read (e.g "@1" in the case of group 1)
 """
 function read_landmarks(path, num_landmarks, group)
     whole_dir = readdir(path)
