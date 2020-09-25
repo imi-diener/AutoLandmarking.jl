@@ -5,7 +5,6 @@ using Base.Threads
 using MultivariateStats
 using Statistics
 using Flux
-using CuArrays
 """
     accuracy(x, y, modell)
 

@@ -4,7 +4,6 @@ authors = ["Immanuel Diener <imi.diener@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
-CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
@@ -21,7 +20,6 @@ Flux = "0.11"
 ImageFiltering = "0.6"
 MultivariateStats = "0.7"
 Distances = "0.8"
-CuArrays = "2.2"
 Images = "0.22"
 JLD = "0.10"
 julia = "1"
