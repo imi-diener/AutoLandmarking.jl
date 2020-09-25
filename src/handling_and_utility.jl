@@ -78,7 +78,7 @@ end
 calculates cost (as defined by function 'cost') over an entire 4d tensor
 containing 2d image data.
 """
-function cost_whole_data_2D(x, y)
+function cost_whole_data_2D(x, y, cost)
   costs = []
   for i in 1:4:size(y)[2]
     if i+3>size(y, 2)

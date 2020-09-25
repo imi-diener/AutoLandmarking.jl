@@ -6,16 +6,11 @@ import ImageView
 push!(LOAD_PATH, Base.@__DIR__)
 
 # Import data with custom import functions
-<<<<<<< HEAD
 image_data, imname = load_imgs("C:/Users/immanueldiener/Desktop/Master/scripts/no_enamel", (128,128,128), false)
 landmark_data = read_landmarks("C:/Users/immanueldiener/Desktop/Master/scripts/no_enamel", 10, "@1")
 
 # X and Y coordinates are swapped in avizo files, wo I'll swap them back here.
 #this step is essential for all the data augmentation to work.
-=======
-image_data, imname = load_imgs("C:/Users/imidi/Desktop/Master/scripts/auto-landmarking/no_enamel", (128,128,128), false)
-landmark_data = read_landmarks("C:/Users/imidi/Desktop/Master/scripts/auto-landmarking/no_enamel", 10, "@1")
->>>>>>> f0ff152bba7cefcd9832c8a02e10cba9a4b483c0
 landmark_data = swap_xy(landmark_data)
 
 #some images have a higher value in the fill voxels than in the actual object voxels. This will fix the issue.
