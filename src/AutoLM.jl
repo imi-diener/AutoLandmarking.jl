@@ -16,6 +16,7 @@ export
     flip_volume_side,
     flip_volume_front,
     mirror_vol,
+    flip_2D,
     flip_3D,
     jitter_3D,
     rotate_images,
