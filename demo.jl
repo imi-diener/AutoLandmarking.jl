@@ -1,4 +1,4 @@
-using AutoLM
+using AutoLandmarking
 using Flux
 using CuArrays
 import ImageView

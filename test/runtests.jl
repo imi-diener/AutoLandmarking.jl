@@ -1,4 +1,4 @@
-using AutoLM
+using AutoLandmarking
 using Test
 using JLD
 

@@ -1,4 +1,4 @@
-name = "AutoLM"
+name = "AutoLandmarking"
 uuid = "513749c4-1492-45a3-bfbf-e630717bb7f0"
 authors = ["Immanuel Diener <imi.diener@gmail.com> and contributors"]
 version = "0.1.0"

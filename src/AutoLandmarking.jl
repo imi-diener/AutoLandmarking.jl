@@ -1,4 +1,4 @@
-module AutoLM
+module AutoLandmarking
 
 include("data_augmentation.jl")
 include("data_preparation.jl")

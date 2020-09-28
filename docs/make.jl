@@ -1,5 +1,5 @@
-push!(LOAD_PATH, "C:\\Users\\imidi\\.julia\\dev\\AutoLM.jl\\src")
+push!(LOAD_PATH, "C:\\Users\\imidi\\.julia\\dev\\AutoLandmarking.jl\\src")
 using Documenter
-using AutoLM
+using AutoLandmarking
 
-makedocs(sitename="AutoLM.jl")
+makedocs(sitename="AutoLandmarking.jl")
