@@ -63,7 +63,7 @@ end
 calculates cost (as defined by function 'cost') over an entire 5d tensor
 containing 3d image data.
 """
-function cost_whole_data_3D(x, y)
+function cost_whole_data_3D(x, y, cost)
   costs = []
   for i in 1:size(y)[2]
     push!(costs, cost(x[:,:,:,:,i:i], y[:,i:i]))

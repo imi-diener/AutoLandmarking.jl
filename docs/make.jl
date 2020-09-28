@@ -1,4 +1,4 @@
-push!(LOAD_PATH, "C:\\Users\\imidi\\.julia\\dev\\AutoLandmarking.jl\\src")
+push!(LOAD_PATH, "C:\\Users\\immanueldiener\\.julia\\dev")
 using Documenter
 using AutoLandmarking
 

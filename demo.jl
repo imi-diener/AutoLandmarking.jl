@@ -99,7 +99,7 @@ X_test = depth_map_all_sides(X_test)
 cost(x, y) = sum((model(x)-y).^2)|>gpu
 
 #define the model
-model = Flux.mapleaves(cu, AutoLM.vgg19)
+model = Flux.mapleaves(cu, AutoLandmarking.vgg19)
 
 # define the trainingrate and optimiser
 opt = Flux.ADAM(0.000015)
@@ -163,7 +163,7 @@ for i in 1:300
   println("epoch ", i, " finished")
   println(costr)
   testmode!(model)
-  acc2, max1, min1 = AutoLM.avg_accuracy_per_point(model, gpu(X_test[:,:,:,:]), gpu(y_test[:,:]), 3)
+  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test[:,:,:,:]), gpu(y_test[:,:]), 3)
   testmode!(model, false)
   println("median deviation per point on testing dataset: ", acc2, "with maximum", max1)
   println("median sum is ", sum(acc2))
@@ -173,6 +173,11 @@ for i in 1:300
   end
 end
 
+
+#save model
+using BSON
+model_cpu = cpu(model)
+BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo.bson" model_cpu
 
 # ================== After training ===================
 
