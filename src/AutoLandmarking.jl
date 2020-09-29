@@ -1,4 +1,4 @@
-module AutoLM
+module AutoLandmarking
 
 include("data_augmentation.jl")
 include("data_preparation.jl")
@@ -37,7 +37,8 @@ export
 
     #evaluation and training
     cost_whole_data_2D,
-    cost_whole_data_3D
+    cost_whole_data_3D,
+    run_model,
     avg_accuracy_per_point,
     predict_single,
     predict_set,

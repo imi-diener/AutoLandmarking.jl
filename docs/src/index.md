@@ -1,4 +1,4 @@
-# AutoLM.jl Documentation
+# AutoLandmarking.jl Documentation
 
 ## Data loading
 ```@docs
@@ -11,8 +11,8 @@ read_landmarks(path, num_landmarks, group)
 flip_volume_front(x, y)
 flip_volume_side(x, y)
 mirror_vol(x, y)
-AutoLM.flip(x, y)
-flip_3D(x, y)
+AutoLandmarking.flip_2D(x, y)
+AutoLandmarking.flip_3D(x, y)
 jitter_3D(volumes, landmarks, padding)
 rotate_images(imgs, lms, deg)
 rotate_volumes(vols, lms, deg)
@@ -29,32 +29,32 @@ align_principal(volumes, landmarks, output_size::Int)
 resize_relevant(vols, lms, out_size)
 translate_lms_back(lms, reconstruction_array)
 choose_dims(y, dims)
-AutoLM.give_z_value(x)
-AutoLM.depth_map(x)
+AutoLandmarking.give_z_value(x)
+AutoLandmarking.depth_map(x)
 depth_map_all_sides(x)
 ```
 
 ## Handling and utility
 ```@docs
-AutoLM.accuracy(x, y, modell, dimensions)
-AutoLM.print_accuracy(x, y, modell, dimensions)
-cost_whole_data_3D(x, y)
-cost_whole_data_2D(x, y)
-AutoLM.avg_accuracy_per_point(modelo, x, y, dims)
-AutoLM.predict_single(model, x)
-AutoLM.predict_set(X, model)
-AutoLM.save_vols_to_folder(folder, vols, names)
-AutoLM.array_to_lm_file(output_path, coordinates)
+AutoLandmarking.accuracy(x, y, modell, dimensions)
+AutoLandmarking.print_accuracy(x, y, modell, dimensions)
+AutoLandmarking.cost_whole_data_3D(x, y, cost)
+AutoLandmarking.cost_whole_data_2D(x, y, cost)
+AutoLandmarking.avg_accuracy_per_point(modelo, x, y, dims)
+AutoLandmarking.predict_single(model, x)
+AutoLandmarking.predict_set(X, model)
+AutoLandmarking.save_vols_to_folder(folder, vols, names)
+AutoLandmarking.array_to_lm_file(output_path, coordinates)
 ```
 
 ## Outlier detection
 ```@docs
-AutoLM.response_distribution(model, X, lms, samples)
-AutoLM.to_3d_array(arr)
-AutoLM.align_all(arr)
-AutoLM.to_2d_array(arr)
-AutoLM.mean_shape(arr)
-AutoLM.proc_distance(ref, arr)
-AutoLM.procrustes_distance_list(arr, names, exclude_highest=false)
-AutoLM.align( x :: Matrix{Float64}, y :: Matrix{Float64} )
+AutoLandmarking.response_distribution(model, X, lms, samples)
+AutoLandmarking.to_3d_array(arr)
+AutoLandmarking.align_all(arr)
+AutoLandmarking.to_2d_array(arr)
+AutoLandmarking.mean_shape(arr)
+AutoLandmarking.proc_distance(ref, arr)
+AutoLandmarking.procrustes_distance_list(arr, names, exclude_highest=false)
+AutoLandmarking.align( x :: Matrix{Float64}, y :: Matrix{Float64} )
 ```

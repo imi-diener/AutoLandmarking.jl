@@ -1,4 +1,4 @@
-# AutoLM
+# AutoLandmarking
 
 ## Intruduction
 This Package is designed to help automate the landmarking process of 2D and 3D image data. The package
