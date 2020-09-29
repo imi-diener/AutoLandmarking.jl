@@ -179,6 +179,10 @@ using BSON
 model_cpu = cpu(model)
 BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo.bson" model_cpu
 
+#load model back in
+BSON.@load "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo.bson" model_cpu
+model = gpu(model_cpu)
+
 # ================== After training ===================
 
 

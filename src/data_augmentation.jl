@@ -112,23 +112,21 @@ end
     flip_3D(x, y)
 
 Takes 3D volumes in a 4D tensor and landmark data in 2D tensor and returns
-the original volumes together with the flipped (clockwise) volumes, aswell
-as the coordinates for the original and the flipped volumes.
+the flipped (clockwise) volumes, aswell
+as the coordinates for the flipped volumes.
 """
 function flip_3D(x, y)
   copyx = zeros(Float32, size(x, 2),size(x, 1),size(x, 3),size(x, 4))
-  copyy = y
-  copyx = cat(x, copyx, dims=length(size(x)))
-  copyy = hcat(y, copyy)
+  copyy = deepcopy(y)
   inds = size(y, 2)
   size_x = size(x, 1)
   Threads.@threads for i in 1:inds
     for cor in 1:3:size(y, 1)
-      copyy[cor+1, inds+i] = size(x,2)/10 - y[cor, i]
-      copyy[cor, inds+i] = y[cor+1, i]
+      copyy[cor+1, i] = size(x,2)/10 - y[cor, i]
+      copyy[cor, i] = y[cor+1, i]
     end
     for o in 1:size_x
-      copyx[:, size_x-(o-1), :, inds+i] = x[o, :, :, i]
+      copyx[:, size_x-(o-1), :, i] = x[o, :, :, i]
     end
   end
   return copyx, copyy
