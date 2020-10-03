@@ -260,13 +260,20 @@ in a counterclockwise direction around their center by deg degrees. Will adjust 
 of the landmark array [coords x n]. Returns rotated images and adjusted landmarks.
 """
 function rotate_images(imgs, lms, deg)
-  n_inds = size(imgs, 3)
+  n_inds = size(imgs, 4)
   out = deepcopy(imgs)
   lms_out = deepcopy(lms)
   for i in 1:n_inds
-    rotated, rotated_lms = rotate_2d(imgs[:,:,i], lms[:,i])
-    out[:,:,i] .= rotated
-    lms_out[:,i] .= rotated_lms
+    for img in 1:size(imgs, 3)
+      if img == 1
+        rotated, rotated_lms = rotate_2d(imgs[:,:,img,i], lms[:,i], deg)
+        lms_out[:,i] .= rotated_lms
+      else
+        rotated_img = Images.imrotate(imgs[:,:,img,i], -deg*pi/180)
+        rotated = Images.imresize(rotated_img, (size(imgs, 1), size(imgs, 2)))
+      end
+      out[:,:,img,i] .= rotated
+    end
   end
   return out, lms_out
 end

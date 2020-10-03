@@ -1,6 +1,6 @@
 using AutoLandmarking
 using Flux
-using CuArrays
+using CuArrays # to run models on the GPU for massive performance increase
 import ImageView
 
 push!(LOAD_PATH, Base.@__DIR__)
@@ -177,7 +177,7 @@ end
 #save model
 using BSON
 model_cpu = cpu(model)
-BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo.bson" model_cpu
+BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo_test.bson" model_cpu
 
 #load model back in
 BSON.@load "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo.bson" model_cpu
