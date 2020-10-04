@@ -86,23 +86,23 @@ end
   flip_2D(x, y)
 
 Takes 2D images in a 4D tensor and landmark data in 2D tensor and returns
-the original images together with the flipped (clockwise) images, aswell
-as the coordinates for the original and the flipped images.
+the flipped (clockwise) images, aswell
+as the coordinates for the flipped images. only works on square images.
 """
 function flip_2D(x, y)
   copyx = zeros(Float32, size(x, 2),size(x, 1),size(x, 3),size(x, 4))
-  copyy = y
-  copyx = cat(x, copyx, dims=length(size(x)))
-  copyy = hcat(y, copyy)
+  copyy = deepcopy(y)
   inds = size(y, 2)
   size_x = size(x, 1)
   for i in 1:inds
     for cor in 1:2:size(y, 1)
-      copyy[cor+1, inds+i] = size(x,2)/10 - y[cor, i]
-      copyy[cor, inds+i] = y[cor+1, i]
+      copyy[cor+1, i] = size(x,2)/10 - y[cor, i]
+      copyy[cor, i] = y[cor+1, i]
     end
-    for o in 1:size_x
-      copyx[:, size_x-(o-1), 1, inds+i] = x[o, :, 1, i]
+    for img in 1:size(x, 3)
+      for o in 1:size_x
+        copyx[:, size_x-(o-1), img, i] = x[o, :, img, i]
+      end
     end
   end
   return copyx, copyy
@@ -265,14 +265,18 @@ function rotate_images(imgs, lms, deg)
   lms_out = deepcopy(lms)
   for i in 1:n_inds
     for img in 1:size(imgs, 3)
+      filler = maximum(imgs[:,:,img,i])
       if img == 1
         rotated, rotated_lms = rotate_2d(imgs[:,:,img,i], lms[:,i], deg)
         lms_out[:,i:i] .= rotated_lms
+        rotated[findall(x->isnan(x)==true, rotated)] .= filler
       else
         rotated_img = Images.imrotate(imgs[:,:,img,i], -deg*pi/180)
         rotated = Images.imresize(rotated_img, (size(imgs, 1), size(imgs, 2)))
+        rotated[findall(x->isnan(x)==true, rotated)] .= filler
       end
       out[:,:,img,i] .= rotated
+
     end
   end
   return out, lms_out
