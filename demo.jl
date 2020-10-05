@@ -176,6 +176,7 @@ end
 
 #save model
 using BSON
+testmode!(model) #save the model in testmode so that the dropout layers are inactive!
 model_cpu = cpu(model)
 BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_demo_test.bson" model_cpu
 
