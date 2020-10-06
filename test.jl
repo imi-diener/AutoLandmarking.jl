@@ -5,41 +5,48 @@ aligned = nothing
 
 X_train, X_test, y_train, y_test = regular_train_test_split_3d(resized, resized_lm)
 
-X_train = resized[:,:,:,setdiff(1:243,86:125)]
-X_test = resized[:,:,:,86:125]
-y_train = resized_lm[:, setdiff(1:243,86:125)]
-y_test = resized_lm[:, 86:125]
 
 X_train, y_train = (mirror_vol(X_train, y_train))
 
 X_train = Float32.(X_train)
 
 flip1, lm_flip1 = flip_3D(X_train, y_train)
-flip2, lm_flip2 = flip_3D(flip1, lm_flip1)
+flip2, lm_flip2 = flip_volume_front(flip1, lm_flip1)
+flip3, lm_flip3 = flip_volume_side(flip2, lm_flip2)
 
+rot, lm_rot = rotate_volumes(flip2, lm_flip2, 10)
+rot2, lm_rot2 = rotate_volumes(X_train, y_train, 20)
+rot3, lm_rot3 = rotate_volumes(flip3, lm_flip3, -15)
 
 jit, lm_jit = jitter_3D(flip1, lm_flip1, 10)
 jit2, lm_jit2 = jitter_3D(X_train, y_train, 10)
-
-rot, lm_rot = rotate_volumes(flip2, lm_flip2, 10)
-rot2, lm_rot2 = rotate_volumes(X_train, y_train, 10)
+jit3, lm_jit3 = jitter_3D(flip3, lm_flip3, 10)
+jit4, lm_jit4 = jitter_3D(rot2, lm_rot2, 10)
 
 using ImageView
+ImageView.imshow(X_train)
+
 
 complete1 = depth_map_all_sides(X_train)
 complete2 = depth_map_all_sides(flip1)
 complete3 = depth_map_all_sides(flip2)
-complete4 = depth_map_all_sides(jit)
-complete5 = depth_map_all_sides(jit2)
-complete6 = depth_map_all_sides(rot)
-complete7 = depth_map_all_sides(rot2)
+complete4 = depth_map_all_sides(flip3)
+complete5 = depth_map_all_sides(rot)
+complete6 = depth_map_all_sides(rot2)
+complete7 = depth_map_all_sides(rot3)
+complete8 = depth_map_all_sides(jit)
+complete9 = depth_map_all_sides(jit2)
+complete10 = depth_map_all_sides(jit3)
+complete11 = depth_map_all_sides(jit4)
 
 X_train = cat(complete1, complete2, complete3, complete4, complete5, complete6,
-    complete7, dims=4)
-y_train = cat(y_train, lm_flip1, lm_flip2, lm_jit, lm_jit2, lm_rot, lm_rot2, dims=2)
+    complete7, complete8, complete9, complete10, complete11, dims=4)
+y_train = cat(y_train, lm_flip1, lm_flip2, lm_flip3, lm_rot, lm_rot2, lm_rot3, lm_jit, lm_jit2, lm_jit3, lm_jit4, dims=2)
 
+X_train = image_gradients(X_train)
 # make depthmaps of the testing data
 X_test = depth_map_all_sides(X_test)
+X_test = image_gradients(X_test)
 
 # define the cost function
 cost(x, y) = sum((model(x)-y).^2)|>gpu
@@ -114,7 +121,7 @@ for i in 1:300
   println("median deviation per point on testing dataset: ", acc2, "with maximum", max1)
   println("median sum is ", sum(acc2))
   push!(accs, sum(acc2))
-  if sum(acc2)[1]<7.5
+  if sum(acc2)[1]<7.0
     break
   end
 end
