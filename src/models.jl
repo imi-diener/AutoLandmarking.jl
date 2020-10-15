@@ -7,7 +7,7 @@ using Flux
 returns the vgg19 model
 """
 vgg19 = Chain(
-  Conv((3, 3), 6 => 64, relu, pad=(1, 1), stride=(1, 1)),
+  Conv((7,7), 12 => 64, relu, pad=(3,3), stride=(2,2)),
   BatchNorm(64),
   Conv((3, 3), 64 => 64, relu, pad=(1, 1), stride=(1, 1)),
   BatchNorm(64),
@@ -42,7 +42,7 @@ vgg19 = Chain(
   Conv((3, 3), 512 => 512, relu, pad=(1, 1), stride=(1, 1)),
   MaxPool((2,2)),
   x -> reshape(x, :, size(x, 4)),
-  Dense(8192, 4096, relu),
+  Dense(2048, 4096, relu),
   Dropout(0.3),
   Dense(4096, 4096, relu),
   Dropout(0.3),

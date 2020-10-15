@@ -96,7 +96,7 @@ costs = []
 
 # run the training for 300 epochs. batches of 128 will be loaded onto the GPU,
 # which will be further subdevided into minibatches of 4 (as defined in AutoML.run_model).
-for i in 1:300
+for i in 1:100
   costr = 0
   for j in 1:128:size(X_train, 4)
     if j+127 > size(X_train, 4)
@@ -140,3 +140,26 @@ minimum(aks)
 import Plots
 Plots.plot(aks, legend=:topright, label="sum of deviations per point", color= :red, xlabel="epochs", ylabel = "acuracy")
 plt = Plots.plot!(Plots.twinx(), costs, label="training loss", legend=:topleft, ylabel = "loss")
+
+
+depthmaps = depth_map_all_sides(images)
+AutoLandmarking.change_values!(depthmaps, -1, NaN, ==)
+with_gradients = image_gradients(depthmaps)
+
+ImageView.imshow(with_gradients)
+
+
+first = images[:,:,:,1:1]
+
+first = AutoLandmarking.give_z_value(first)
+
+AutoLandmarking.change_values!(first, -1, NaN, ==)
+
+one, two, three = ImageFiltering.imgradients(first[:,:,:,1], ImageFiltering.Kernel.ando3)
+ImageView.imshow(abs.(one).+abs.(two).+abs.(three))
+
+mands = depth_map_all_sides(resized)
+
+mands_grads = image_gradients(mands)
+
+ImageView.imshow(mands_grads)
