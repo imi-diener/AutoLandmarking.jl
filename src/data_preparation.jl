@@ -24,6 +24,22 @@ function swap_xy(lms)
 end
 
 """
+    empty_3rd_dimension(lms)
+
+returns a new 2D array with 3 coordinates per landmark
+with the third (z-) coordinate being 0 for all landmarks.
+"""
+function empty_3rd_dimension(lms)
+    new_lms = zeros(Float32, Int64(size(lms,1)*3/2), size(lms, 2))
+    counter = 0
+    for i in 1:3:60
+        new_lms[i:i+1,:] = lms[i-counter:i-(counter-1), :]
+        counter+=1
+    end
+    return new_lms
+end
+
+"""
     change_values!(m, from, to, rel)
 
 Quickly change elements that are `rel`(`from`) to `to`.
@@ -47,6 +63,30 @@ function reshape_4d_to_5d(tensor)
   return img_data
 end
 
+"""
+    resize_2d_images(imgs, lms, out_size)
+
+Resizes 4D tensor of 2D images to size(outsize[1], outsize[2]) and
+adjusts landmarks accordingly. out_size is a tuple with sizes in
+dim1 and dim2.
+"""
+function resize_2d_images(imgs, lms, out_size)
+    n_inds = size(imgs, 4)
+    out = zeros(Float32, out_size[1], out_size[2], size(imgs, 3), n_inds)
+    out_lms = deepcopy(lms)
+    ratio_x = out_size[1]/size(imgs, 1)
+    ratio_y = out_size[2]/size(imgs, 2)
+    for i in 1:2:size(lms, 1)
+        out_lms[i,:] .= lms[i,:] .* ratio_x
+        out_lms[i+1, :] .= lms[i+1, :] .* ratio_y
+    end
+    for ind in 1:n_inds
+        for img in 1:size(imgs, 3)
+            out[:,:,img, ind] .= Images.imresize(imgs[:,:,img,ind], out_size)
+        end
+    end
+    return out, out_lms
+end
 
 # need to build custom function, the scikit one doesn't work due to dimension problems
 """

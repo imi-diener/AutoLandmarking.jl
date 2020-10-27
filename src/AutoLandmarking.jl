@@ -18,12 +18,15 @@ export
     mirror_vol,
     flip_2D,
     flip_3D,
+    jitter_2D,
     jitter_3D,
     rotate_images,
     rotate_volumes,
 
     #utility and data preparation
     swap_xy,
+    empty_3rd_dimension,
+    resize_2d_images,
     train_test_split_3d,
     regular_train_test_split_3d,
     regular_train_test_split_2d,

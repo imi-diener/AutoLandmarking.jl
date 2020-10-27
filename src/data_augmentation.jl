@@ -187,6 +187,39 @@ end
 # end
 
 """
+    jitter_2D(imgs, landmarks, padding)
+
+Jitters around 2D images based on their landmarks. The landmarked part of the
+images plus #(padding) pixels around them will not be moved out of the
+picture. returns jittered images and landmarks.
+"""
+function jitter_2D(imgs, landmarks, padding)
+  coordinates = to_3d_array_2d(landmarks)
+  out = deepcopy(imgs)
+  Threads.@threads for ind in 1:size(landmarks, 2)
+    size_x = size(imgs, 1)
+    size_y = size(imgs, 2)
+    min_x = max(0, minimum(coordinates[:,1,ind]) * 10 - padding)
+    max_x = min(size_x, maximum(coordinates[:,1,ind]) * 10 + padding)
+    min_y = max(0, minimum(coordinates[:,2,ind]) * 10 - padding)
+    max_y = min(size_y, maximum(coordinates[:,2,ind]) * 10 + padding)
+    jitter_x = rand(-floor(Int, min_x):(size_x-floor(Int, max_x)))
+    jitter_y = rand(-floor(Int, min_y):(size_y-floor(Int, max_y)))
+    for img in 1:size(imgs, 3)
+        filler = maximum(imgs[:,:,img,ind])
+        out[:,:,img,ind] .= filler
+        out[max(1, jitter_x+1):min(size_x, size_x+jitter_x), max(1, jitter_y+1):min(size_y, size_y+jitter_y),
+          img, ind] .= imgs[max(1, -jitter_x+1):min(size_x, size_x-jitter_x),
+          max(1, -jitter_y+1):min(size_y, size_y-jitter_y), img, ind]
+    end
+    coordinates[:,1,ind] .= coordinates[:,1,ind] .+ jitter_x/10
+    coordinates[:,2,ind] .= coordinates[:,2,ind] .+ jitter_y/10
+  end
+  lms_out = to_2d_array_2d(coordinates)
+  return out, lms_out
+end
+
+"""
     jitter_3D(volumes, landmarks, padding)
 
 Jitters around binarized volumes based on their corresponding x/y landmarks, so that
