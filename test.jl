@@ -3,7 +3,19 @@ aligned, aligned_lm, reco = align_principal(images, lms_on_surface, 192)
 resized, resized_lm, scales = resize_relevant(aligned, aligned_lm, 128)
 aligned = nothing
 
-X_train, X_test, y_train, y_test = regular_train_test_split_3d(resized, resized_lm)
+images1, imnames1 = load_imgs("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/bonobo_volumes_large", (256,256,256), true)
+images2, imnames2 = load_imgs("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/chimp_volumes_large", (256,256,256), true)
+images = cat(images1, images2, dims=4)
+images = Float32.(images)
+images1 = nothing
+images2 = nothing
+
+landmark_data = read_landmarks("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/bonobo_volumes_large", 22, "@1")
+landmark_data2 = read_landmarks("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/chimp_volumes_large", 22, "@1")
+landmarks = cat(landmark_data, landmark_data2, dims=2)./10
+
+
+X_train, X_test, y_train, y_test = regular_train_test_split_2d(images, landmarks)
 
 
 X_train, y_train = (mirror_vol(X_train, y_train))
@@ -28,15 +40,25 @@ ImageView.imshow(X_train)
 
 
 complete1 = depth_map_all_sides(X_train)
+X_train=nothing
 complete2 = depth_map_all_sides(flip1)
+flip1=nothing
 complete3 = depth_map_all_sides(flip2)
+flip2=nothing
 complete4 = depth_map_all_sides(flip3)
+flip3=nothing
 complete5 = depth_map_all_sides(rot)
+rot=nothing
 complete6 = depth_map_all_sides(rot2)
+rot2=nothing
 complete7 = depth_map_all_sides(rot3)
+rot3=nothing
 complete8 = depth_map_all_sides(jit)
+jit=nothing
 complete9 = depth_map_all_sides(jit2)
+jit2=nothing
 complete10 = depth_map_all_sides(jit3)
+jit3=nothing
 complete11 = depth_map_all_sides(jit4)
 
 X_train = cat(complete1, complete2, complete3, complete4, complete5, complete6,
@@ -96,7 +118,7 @@ costs = []
 
 # run the training for 300 epochs. batches of 128 will be loaded onto the GPU,
 # which will be further subdevided into minibatches of 4 (as defined in AutoML.run_model).
-for i in 1:100
+for i in 1:150
   costr = 0
   for j in 1:128:size(X_train, 4)
     if j+127 > size(X_train, 4)
@@ -121,7 +143,7 @@ for i in 1:100
   println("median deviation per point on testing dataset: ", acc2, "with maximum", max1)
   println("median sum is ", sum(acc2))
   push!(accs, sum(acc2))
-  if sum(acc2)[1]<7.0
+  if sum(acc2)[1]<23.0
     break
   end
 end
@@ -142,24 +164,62 @@ Plots.plot(aks, legend=:topright, label="sum of deviations per point", color= :r
 plt = Plots.plot!(Plots.twinx(), costs, label="training loss", legend=:topleft, ylabel = "loss")
 
 
-depthmaps = depth_map_all_sides(images)
-AutoLandmarking.change_values!(depthmaps, -1, NaN, ==)
-with_gradients = image_gradients(depthmaps)
+# Data analysis mandibles ==================
 
-ImageView.imshow(with_gradients)
+response = cpu(predict_set(gpu(X_test), model))
+
+for i in 1:19
+  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test[:,:,:,i:i]), gpu(y_test[:,i:i]), 3)
+  println(sum(acc2))
+end
 
 
-first = images[:,:,:,1:1]
+X_train2, X_test2, y_train2, y_test2 = regular_train_test_split_2d(images, landmarks)
+three_d_train = AutoLandmarking.to_3d_array(y_train2)
+three_d_test = AutoLandmarking.to_3d_array(response)
 
-first = AutoLandmarking.give_z_value(first)
+aligned_train = AutoLandmarking.align_all(three_d_train)
+aligned_test = AutoLandmarking.align_all(three_d_test)
 
-AutoLandmarking.change_values!(first, -1, NaN, ==)
+mean_train = AutoLandmarking.mean_shape(aligned_train)
 
-one, two, three = ImageFiltering.imgradients(first[:,:,:,1], ImageFiltering.Kernel.ando3)
-ImageView.imshow(abs.(one).+abs.(two).+abs.(three))
 
-mands = depth_map_all_sides(resized)
+distances = AutoLandmarking.proc_distance(mean_train, aligned_test)
+dists = []
+for i in 1:19
+  push!(dists, distances[i])
+end
 
-mands_grads = image_gradients(mands)
+for i in 1:19
+  if distances[i] > 40
+    println(i)
+  end
+end
+# 6 are over 40
 
-ImageView.imshow(mands_grads)
+resp_conf = response[:,findall(x->x<40,dists)]
+volumes_conf = X_test2[:,:,:,findall(x->x<40,dists)]
+y_test_conf = y_test[:,findall(x->x<40,dists)]
+X_test_conf = X_test[:,:,:,findall(x->x<40,dists)]
+
+for i in 1:13
+  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test_conf[:,:,:,i:i]), gpu(y_test_conf[:,i:i]), 3)
+  println(sum(acc2))
+end
+
+AutoLandmarking.change_values!(resp_conf, 25.6, 25.6, >)
+output =  AutoLandmarking.landmark_to_surface(volumes_conf, resp_conf, 6)
+
+for i in 1:13
+  println(sum((y_test_conf[:,i] .- output[:,i]).^2))
+end
+
+imnames = cat(imnames1, imnames2, dims=1)
+test_names = []
+for i in 5:5:97
+  push!(test_names, imnames[i])
+end
+names_conf = test_names[findall(x->x<40,dists)]
+AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/response_worst_actual.landmarkAscii", y_test_conf[:,6])
+# ===========================================
+print(dists)
