@@ -9,7 +9,7 @@ by setting the model to trainmode! and thus enabling the dropout layers.
 """
 function response_distribution(model, X, lms, samples)
   testmode!(model, false)
-  out = zeros(lms, samples)
+  out = zeros(size(lms, 1), samples)
   means = []
   st_dev = []
   for i in 1:samples

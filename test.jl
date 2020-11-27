@@ -162,64 +162,158 @@ minimum(aks)
 import Plots
 Plots.plot(aks, legend=:topright, label="sum of deviations per point", color= :red, xlabel="epochs", ylabel = "acuracy")
 plt = Plots.plot!(Plots.twinx(), costs, label="training loss", legend=:topleft, ylabel = "loss")
+Plots.png(plt, "C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/mandibles_training.png")
 
 
 # Data analysis mandibles ==================
-
 response = cpu(predict_set(gpu(X_test), model))
+X_train2, X_test2, y_train2, y_test2 = regular_train_test_split_2d(images, landmarks)
+on_vol = AutoLandmarking.landmark_to_surface(X_test2, response, 6)
+on_vol_no4 = on_vol[:, cat(1:3,5:19,dims=1)]
+response_no4 = response[:, cat(1:3,5:19,dims=1)]
 
-for i in 1:19
-  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test[:,:,:,i:i]), gpu(y_test[:,i:i]), 3)
-  println(sum(acc2))
+function print_costs(y, resp)
+  costs=[]
+  for i in 1:size(resp,2)
+    dev = sum((y[:,i] .- resp[:,i]) .^2)
+    push!(costs, dev)
+    println(i, "    ", dev)
+  end
+  return costs
 end
 
+costs_resp = print_costs(y_test_no4, response_no4)
 
-X_train2, X_test2, y_train2, y_test2 = regular_train_test_split_2d(images, landmarks)
+# puting on volume makes it worse
+
 three_d_train = AutoLandmarking.to_3d_array(y_train2)
-three_d_test = AutoLandmarking.to_3d_array(response)
+three_d_test = AutoLandmarking.to_3d_array(response_no4)
 
 aligned_train = AutoLandmarking.align_all(three_d_train)
 aligned_test = AutoLandmarking.align_all(three_d_test)
 
-mean_train = AutoLandmarking.mean_shape(aligned_train)
+mean_train, stdevs = mean_shape(aligned_train)
 
-
-distances = AutoLandmarking.proc_distance(mean_train, aligned_test)
+distances = proc_distance(mean_train, aligned_test, stdevs)
 dists = []
-for i in 1:19
+for i in 1:18
   push!(dists, distances[i])
 end
 
-for i in 1:19
-  if distances[i] > 40
-    println(i)
-  end
+for i in 1:18
+  println("ind $i cost is ", costs_resp[i], "  and dist is ", dists[i])
+end
+
+uncertainties = []
+for i in 1:18
+  means, stddev = AutoLandmarking.response_distribution(model, gpu(X_test_no4[:,:,:,i:i]), gpu(y_test_no4[:,i:i]), 100)
+  println("$i has uncevertaty", sum(stddev), "  and cost  ", costs_resp[i])
+  push!(uncertainties, sum(stddev))
 end
 # 6 are over 40
 
-resp_conf = response[:,findall(x->x<40,dists)]
-volumes_conf = X_test2[:,:,:,findall(x->x<40,dists)]
-y_test_conf = y_test[:,findall(x->x<40,dists)]
-X_test_conf = X_test[:,:,:,findall(x->x<40,dists)]
+dists_conf = dists[findall(x->x<41,dists)]
+resp_conf = response_no4[:,findall(x->x<41,dists)]
+volumes_conf = X_test2[:,:,:,findall(x->x<41,dists)]
+y_test_conf = y_test_no4[:,findall(x->x<41,dists)]
+X_test_conf = X_test_no4[:,:,:,findall(x->x<41,dists)]
+AutoLandmarking.change_values!(y_test_conf, 26.0, 0, >)
 
-for i in 1:13
-  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test_conf[:,:,:,i:i]), gpu(y_test_conf[:,i:i]), 3)
-  println(sum(acc2))
-end
 
-AutoLandmarking.change_values!(resp_conf, 25.6, 25.6, >)
-output =  AutoLandmarking.landmark_to_surface(volumes_conf, resp_conf, 6)
-
-for i in 1:13
-  println(sum((y_test_conf[:,i] .- output[:,i]).^2))
-end
-
+is_bonobo = zeros(97,1)
+is_bonobo[1:37,1] .= 1
 imnames = cat(imnames1, imnames2, dims=1)
 test_names = []
-for i in 5:5:97
-  push!(test_names, imnames[i])
+train_names = []
+is_bonobo_train = []
+is_bonobo_test = []
+for i in 1:97
+  if i % 5 == 0
+    push!(test_names, imnames[i])
+    push!(is_bonobo_test, is_bonobo[i])
+  else
+    push!(train_names, imnames[i])
+    push!(is_bonobo_train, is_bonobo[i])
+  end
 end
-names_conf = test_names[findall(x->x<40,dists)]
-AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/response_worst_actual.landmarkAscii", y_test_conf[:,6])
+
+is_bonobo_test_no4 = is_bonobo_test[cat(1:3,5:19,dims=1)]
+is_bonobo_conf = is_bonobo_test_no4[findall(x->x<41,dists)]
+test_names = test_names[cat(1:3,5:19,dims=1)]
+names_conf = test_names[findall(x->x<41,dists)]
+AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/worst_pred.landmarkAscii", response_no4[:,18])
+
+import ImageView
+using DelimitedFiles
+using Statistics
+
+y_test_no4 = y_test[:,cat(1:3,5:19,dims=1)]
+X_test_no4 = X_test[:,:,:,cat(1:3,5:19,dims=1)]
+ImageView.imshow(X_test_no4)
+
+
+all_devs = zeros(14, 4)
+devs_per_point = zeros(14*22, 2)
+
+AutoLandmarking.change_values!(y_test_no4, 26.0, 0.0, >)
+
+testmode!(model)
+for i in 1:14
+  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test_conf[:,:,:,i:i]), gpu(y_test_conf[:,i:i]), 3)
+  all_devs[i,1] = sum(acc2)
+  all_devs[i,2] = dists_conf[i]
+  all_devs[i,3] = i
+  if i in findall(x->x<41,dists)
+    all_devs[i,4] = 1
+  end
+end
+minimum(all_devs[:,1])
+all_devs
+using Distances
+for i in 1:14
+  for j in 1:22
+    devs_per_point[(i-1)*22+j, 1] = euclidean(resp_conf[j*3-2:j*3, i], y_test_conf[j*3-2:j*3, i])
+    devs_per_point[(i-1)*22+j, 2] = j
+    if j == 2
+      println(i, "   ", euclidean(resp_conf[j*3-2:j*3, i], y_test_conf[j*3-2:j*3, i]))
+    end
+  end
+end
+
+devs_per_point
+
+AutoLandmarking.change_values!(y_test, 25.8, 25.6, >)
+test_names[18]
+
+out = hcat(all_devs, names_conf)
+
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/devs_per_ind.txt", out)
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/devs_per_point.txt", devs_per_point)
+
+
+# timing GPU : 12000/min, CPU: 110/min
+@time begin
+  predict_set(X_train[:,:,:,1:50], model_cpu)
+end
+
+
+
+# export of coordinates
+out_test = hcat(names_conf, is_bonobo_conf, resp_conf')
+out_train = hcat(train_names, is_bonobo_train, y_train')
+out_all = vcat(out_train, out_test)
+is_train = zeros(92, 1)
+is_train[1:78] .= 1
+output_all = hcat(out_all[:,1:2], is_train, out_all[:,3:end])
+
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/coords_pred.txt", out_test)
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/coords_train.txt", out_train)
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/mandibles/coords_all.txt", output_all)
 # ===========================================
-print(dists)
+
+using BSON
+testmode!(model)
+model_cpu = cpu(model)
+BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_mandibles.bson" model_cpu
+BSON.@load "C:/Users/immanueldiener/Desktop/Master/master_data/model_mandibles.bson" model_cpu
+model = gpu(model_cpu)

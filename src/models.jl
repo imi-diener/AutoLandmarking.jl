@@ -90,5 +90,5 @@ vgg19_large = Chain(
   Dropout(0.3),
   Dense(4096, 4096, relu),
   Dropout(0.3),
-  Dense(4096, 30)
+  Dense(4096, 66)
 )
