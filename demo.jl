@@ -218,10 +218,16 @@ response = cpu(predict_set(gpu(X_test), model)) #predictions
 retro_test = zeros(3,5,48)
 scales_test = zeros(1,48)
 names_test = []
+names_train = []
 for i in 1:48
   push!(names_test, names[i*5])
   retro_test[:,:,i] = retro[:,:,i*5]
   scales_test[1,i] = scales[i*5]
+end
+for i in 1:243
+  if i%5!=0
+    push!(names_train, names[i])
+  end
 end
 
 response_scaled = deepcopy(response)
@@ -230,8 +236,10 @@ for i in 1:48
   response_scaled[:,i] .= response[:,i]./scales_test[i]
 end
 
+accuracies = []
 for i in 1:48
   acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test[:,:,:,i:i]), gpu(y_test[:,i:i]), 3)
+  push!(accuracies, sum(acc2))
   println(i, "   ", sum(acc2))
 end
 
@@ -240,7 +248,7 @@ AutoLandmarking.change_values!(response_unaligned, 12.8, 12.8, >)
 response_on_vol = landmark_to_surface(X_test2, response_unaligned, 10)
 
 costs = print_costs(y_test2, response_on_vol) # using the landmark_to_surface function is useful
-median(costs)
+median(accuracies)
 #outlier detection
 using Distances
 using Statistics
@@ -303,6 +311,8 @@ for i in 1:48
   push!(uncertainties, sum(stddev))
 end
 
+maximum(uncertainties)-0.3*(maximum(uncertainties)-minimum(uncertainties))
+0.05*48
 
 response_conf1 = response_on_vol[:,findall(x->x<9.6, uncertainties)]
 y_test_conf1 = y_test[:,findall(x->x<9.6, uncertainties)]
@@ -311,6 +321,7 @@ y_test2_conf1 = y_test2[:,findall(x->x<9.6, uncertainties)]
 dists_conf1 = dists[findall(x->x<9.6, uncertainties)]
 names_conf1 = names_test[findall(x->x<9.6, uncertainties)]
 costs_conf1 = costs[findall(x->x<9.6, uncertainties)]
+accuracies_conf1 = accuracies[findall(x->x<9.6, uncertainties)]
 for i in 1:43
   println("ind $i cost is ", costs_conf1[i], "  and dist is ", dists_conf1[i])
 end
@@ -322,11 +333,13 @@ y_test2_conf = y_test2_conf1[:,findall(x->x<15.5, dists_conf1)]
 dists_conf = dists_conf1[findall(x->x<15.5, dists_conf1)]
 names_conf = names_conf1[findall(x->x<15.5, dists_conf1)]
 costs_conf = costs_conf1[findall(x->x<15.5, dists_conf1)]
+accuracies_conf = accuracies_conf1[findall(x->x<15.5, dists_conf1)]
 
 for i in 1:40
-  println("ind $i cost is ", costs_conf[i], "  and dist is ", dists_conf[i])
+  println("ind", names_conf[i], " cost is ", costs_conf[i], "  and dist is ", dists_conf[i])
 end
 
+maximum(accuracies_conf)
 
 is_hollow = zeros(243,1)
 is_hollow[143:end,1] .= 1
@@ -336,19 +349,18 @@ for i in 1:48
 end
 is_hollow_conf = is_hollow_test[findall(x->x<9.5, uncertainties)]
 
-all_devs = zeros(42, 3)
-devs_per_point = zeros(42*10, 2)
+all_devs = zeros(40, 3)
+devs_per_point = zeros(40*10, 2)
 
 testmode!(model)
-for i in 1:42
-  acc2, max1, min1 = AutoLandmarking.avg_accuracy_per_point(model, gpu(X_test_conf[:,:,:,i:i]), gpu(y_test_conf[:,i:i]), 3)
-  all_devs[i,1] = sum(acc2)
+for i in 1:40
+  all_devs[i,1] = accuracies_conf[i]
   all_devs[i,2] = is_hollow_conf[i]
   all_devs[i,3] = i
 end
 
 using Distances
-for i in 1:42
+for i in 1:40
   for j in 1:10
     devs_per_point[(i-1)*10+j, 1] = euclidean(response_conf[j*3-2:j*3, i], y_test2_conf[j*3-2:j*3, i])
     devs_per_point[(i-1)*10+j, 2] = j
@@ -373,3 +385,53 @@ AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_
 AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/worst_overall.landmarkAscii", response_unconf[:,26])
 names_conf[37]
 names_conf[23]
+names_out=cat(names_train, names_conf, dims=1)
+is_manual = zeros(1,235)
+is_manual[1,1:195].=1
+
+all_coords = cat(swap_xy(y_train2), response_out, dims=2)
+all_meta = hcat(names_out, is_manual')
+all_out = hcat(all_meta, all_coords')
+AutoLandmarking.change_values!(all_coords, 0.01, 0, <)
+
+all_out = all_out[setdiff(1:235,174),:]
+
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/kept_predictions.txt", all_out[195:end, :])
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/training.txt", all_out[1:194])
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/all_teeth.txt", all_out)
+
+using CSV
+
+pc_scores = CSV.read("C:\\Users\\immanueldiener\\Desktop\\Master\\master_data\\testing_volumes\\pcs_all.txt")
+scores = zeros(1,234)
+
+scores[1,:] .= pc_scores[:,2]
+
+all_out_mirror = deepcopy(all_out)
+
+for i in 1:234
+  if scores[1,i] <=0.0
+    for j in 1:10
+      all_out_mirror[i,2+j*3] = all_out[i, 2+j*3] *-1
+    end
+  end
+end
+
+
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/kept_predictions.txt", all_out_mirror[195:end, :])
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/training.txt", all_out_mirror[1:194])
+writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/all_teeth.txt", all_out_mirror)
+
+devs_points = zeros(10,40)
+for i in 1:40
+  for j in 1:10
+    devs_points[j, i] = devs_per_point[(i-1)*10+j, 1]
+  end
+end
+
+mean_devs = []
+for i in 1:10
+  push!(mean_devs, median(devs_points[i,:]))
+end
+
+mean_devs ./12.8
