@@ -20,7 +20,7 @@ Distances = "0.8, 0.9"
 Flux = "0.11"
 ImageFiltering = "0.6"
 Images = "0.22"
-JLD = "0.10"
+JLD = "0.10, 0.11"
 MultivariateStats = "0.7"
 julia = "1"
 
