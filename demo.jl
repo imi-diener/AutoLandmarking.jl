@@ -385,16 +385,20 @@ AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_
 AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/worst_overall.landmarkAscii", response_unconf[:,26])
 names_conf[37]
 names_conf[23]
-names_out=cat(names_train, names_conf, dims=1)
-is_manual = zeros(1,235)
-is_manual[1,1:195].=1
+names_out=cat(names, names_conf, dims=1)
+is_manual = zeros(1,283)
+is_manual[1,1:243].=1
+testingset = zeros(1,283)
+for i in 5:5:243
+  testingset[i] = 1
+end
 
-all_coords = cat(swap_xy(y_train2), response_out, dims=2)
-all_meta = hcat(names_out, is_manual')
+all_coords = cat(swap_xy(lms), response_out, dims=2)
+all_meta = hcat(names_out, is_manual', testingset')
 all_out = hcat(all_meta, all_coords')
 AutoLandmarking.change_values!(all_coords, 0.01, 0, <)
-
-all_out = all_out[setdiff(1:235,174),:]
+findall(x->x==0, all_out[:,5])
+all_out = all_out[setdiff(1:283,217),:]
 
 writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/kept_predictions.txt", all_out[195:end, :])
 writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/training.txt", all_out[1:194])
@@ -403,13 +407,13 @@ writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/all
 using CSV
 
 pc_scores = CSV.read("C:\\Users\\immanueldiener\\Desktop\\Master\\master_data\\testing_volumes\\pcs_all.txt")
-scores = zeros(1,234)
+scores = zeros(1,282)
 
 scores[1,:] .= pc_scores[:,2]
-
+maximum(scores)
 all_out_mirror = deepcopy(all_out)
 
-for i in 1:234
+for i in 1:282
   if scores[1,i] <=0.0
     for j in 1:10
       all_out_mirror[i,2+j*3] = all_out[i, 2+j*3] *-1

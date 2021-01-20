@@ -95,7 +95,11 @@ function read_landmarks(path, num_landmarks, group)
             single_co = split(coords[point], " ")
             single_co = single_co[1:3]
             for co in 1:3
-                coordinates[file, point*3 - (3-co)] = parse(Float64, single_co[co][1:end-5]) * 10.0^parse(Float64, single_co[co][end-3:end])
+                if parse(Float64, single_co[co][1:end-5]) * 10.0^parse(Float64, single_co[co][end-1:end]) <= 256
+                    coordinates[file, point*3 - (3-co)] = parse(Float64, single_co[co][1:end-5]) * 10.0^parse(Float64, single_co[co][end-1:end])
+                else
+                    coordinates[file, point*3 - (3-co)] = parse(Float64, single_co[co][1:end-5]) * 10.0^-parse(Float64, single_co[co][end-1:end])
+                end
             end
         end
     end

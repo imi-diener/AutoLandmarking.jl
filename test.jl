@@ -36,7 +36,7 @@ jit3, lm_jit3 = jitter_3D(flip3, lm_flip3, 10)
 jit4, lm_jit4 = jitter_3D(rot2, lm_rot2, 10)
 
 using ImageView
-ImageView.imshow(X_train)
+ImageView.imshow(X_test)
 
 
 complete1 = depth_map_all_sides(X_train)
@@ -212,13 +212,13 @@ for i in 1:18
 end
 # 6 are over 40
 
-dists_conf = dists[findall(x->x<41,dists)]
-resp_conf = response_no4[:,findall(x->x<41,dists)]
-volumes_conf = X_test2[:,:,:,findall(x->x<41,dists)]
-y_test_conf = y_test_no4[:,findall(x->x<41,dists)]
-X_test_conf = X_test_no4[:,:,:,findall(x->x<41,dists)]
+dists_conf = dists[findall(x->x<4,dists)]
+resp_conf = response_no4[:,findall(x->x<4,dists)]
+volumes_conf = X_test2[:,:,:,findall(x->x<4,dists)]
+y_test_conf = y_test_no4[:,findall(x->x<4,dists)]
+X_test_conf = X_test_no4[:,:,:,findall(x->x<4,dists)]
 AutoLandmarking.change_values!(y_test_conf, 26.0, 0, >)
-
+ImageView.imshow(X_test_conf)
 
 is_bonobo = zeros(97,1)
 is_bonobo[1:37,1] .= 1
@@ -252,6 +252,8 @@ X_test_no4 = X_test[:,:,:,cat(1:3,5:19,dims=1)]
 ImageView.imshow(X_test_no4)
 
 
+ImageView.imshow(depth_map_all_sides(X_test_no4))
+test_names[14]
 all_devs = zeros(14, 4)
 devs_per_point = zeros(14*22, 2)
 
