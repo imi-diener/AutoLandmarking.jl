@@ -77,35 +77,46 @@ end
     mean_shape(arr)
 
 finds the mean shape of all teh individuals in a 3D landmark array. Procrustes
-alignment should be performed before finding the mean.
+alignment should be performed before finding the mean. Returns the mean shape
+and the standard deviations around each point.
 """
 function mean_shape(arr)
   n_points = size(arr, 1)
   mean_shape = zeros(n_points, 3)
+  stdev = []
   for p in 1:n_points
+    all_devs=[]
     mean_shape[p, 1] = mean(arr[p, 1, :])
     mean_shape[p, 2] = mean(arr[p, 2, :])
     mean_shape[p, 3] = mean(arr[p, 3, :])
+    for i in 1:size(arr,3)
+      push!(all_devs, euclidean(mean_shape[p,:], arr[p,:,i]))
+    end
+    push!(stdev, std(all_devs))
   end
-  return mean_shape
+  return mean_shape, stdev
 end
 
 """
-    proc_distance(ref, arr)
+    proc_distance(ref, arr, stdev)
 
 returns the procrustes distances to a reference (e.g. the mean shape)
-for every individual in a 3D landmark array.
+for every individual in a 3D landmark array in terms of multiples
+of the standard deviation around each point.
 """
-function proc_distance(ref, arr)
+function proc_distance(ref, arr, stdev)
   n_inds = size(arr, 3)
   n_points = size(arr, 1)
   dists = zeros(1, n_inds)
   for i in 1:n_inds
-    sum_dist = 0
+    maximum_dist = 0.0
     for p in 1:n_points
-      sum_dist += euclidean(ref[p, :], arr[p, :, i])
+      dist = euclidean(ref[p, :], arr[p, :, i])/stdev[p]
+      if dist>maximum_dist
+        maximum_dist = dist
+      end
     end
-    dists[i] = sum_dist
+    dists[i] = maximum_dist
   end
   return dists
 end

@@ -38,6 +38,8 @@ ImageView.imshow(depth_map_all_sides(resized))
 #define training and testing sets
 X_train, X_test, y_train, y_test = regular_train_test_split_3d(resized, resized_lms)
 
+# perform data augmentation. In case of RAM limitations the depth-map generation can be
+# done right after every augmentation step, after which the augmented volumes can be deleted.
 X_train, y_train = (mirror_vol(X_train, y_train))
 
 X_train = Float32.(X_train)
@@ -83,9 +85,11 @@ X_train = cat(complete1, complete2, complete3, complete4, complete5, complete6,
 y_train = cat(y_train, lm_flip1, lm_flip2, lm_flip3, lm_rot, lm_rot2, lm_rot3, lm_jit, lm_jit2, lm_jit3, lm_jit4, dims=2)
 
 X_train = image_gradients(X_train)
+
 # make depthmaps of the testing data
 X_test = depth_map_all_sides(X_test)
 X_test = image_gradients(X_test)
+
 # define the cost function
 cost(x, y) = sum((model(x)-y).^2)|>gpu
 
@@ -175,6 +179,8 @@ BSON.@save "C:/Users/immanueldiener/Desktop/Master/master_data/model_teeth.bson"
 BSON.@load "C:/Users/immanueldiener/Desktop/Master/master_data/model_teeth.bson" model_cpu
 model = gpu(model_cpu)
 
+
+
 # ================== After training ===================
 
 
@@ -214,7 +220,8 @@ X_train2, X_test2, y_train2, y_test2 = regular_train_test_split_3d(images, lms) 
 
 response = cpu(predict_set(gpu(X_test), model)) #predictions
 
-# translate predictions back to the original volumes
+# translate predictions back to the original volumes and get the names for training
+# and testing set. This is necessary since we performed PC-alignment and resizing before training.
 retro_test = zeros(3,5,48)
 scales_test = zeros(1,48)
 names_test = []
@@ -243,48 +250,15 @@ for i in 1:48
   println(i, "   ", sum(acc2))
 end
 
+# set negative values to 0 and values outside the volume to the maximum along each dimension
 response_unaligned = relu.(translate_lms_back(response_scaled, retro_test))
 AutoLandmarking.change_values!(response_unaligned, 12.8, 12.8, >)
+
+# put landmarks near the surface onto the surface and look at the cost change
 response_on_vol = landmark_to_surface(X_test2, response_unaligned, 10)
-
 costs = print_costs(y_test2, response_on_vol) # using the landmark_to_surface function is useful
-median(accuracies)
-#outlier detection
-using Distances
-using Statistics
-function mean_shape(arr)
-  n_points = size(arr, 1)
-  mean_shape = zeros(n_points, 3)
-  stdev = []
-  for p in 1:n_points
-    all_devs=[]
-    mean_shape[p, 1] = mean(arr[p, 1, :])
-    mean_shape[p, 2] = mean(arr[p, 2, :])
-    mean_shape[p, 3] = mean(arr[p, 3, :])
-    for i in 1:size(arr,3)
-      push!(all_devs, euclidean(mean_shape[p,:], arr[p,:,i]))
-    end
-    push!(stdev, std(all_devs))
-  end
-  return mean_shape, stdev
-end
 
-function proc_distance(ref, arr, stdev)
-  n_inds = size(arr, 3)
-  n_points = size(arr, 1)
-  dists = zeros(1, n_inds)
-  for i in 1:n_inds
-    maximum_dist = 0.0
-    for p in 1:n_points
-      dist = euclidean(ref[p, :], arr[p, :, i])/stdev[p]
-      if dist>maximum_dist
-        maximum_dist = dist
-      end
-    end
-    dists[i] = maximum_dist
-  end
-  return dists
-end
+#outlier detection based on procrustes distances
 
 three_d_train = AutoLandmarking.to_3d_array(y_train2)
 three_d_test = AutoLandmarking.to_3d_array(response_on_vol)
@@ -292,150 +266,23 @@ three_d_test = AutoLandmarking.to_3d_array(response_on_vol)
 aligned_train = AutoLandmarking.align_all(three_d_train)
 aligned_test = AutoLandmarking.align_all(three_d_test)
 
-mean_train, stdevs = mean_shape(aligned_train)
+mean_train, stdevs = AutoLandmarking.mean_shape(aligned_train)
 
-distances = proc_distance(mean_train, aligned_test, stdevs)
+distances = AutoLandmarking.proc_distance(mean_train, aligned_test, stdevs)
 dists = []
 for i in 1:48
   push!(dists, distances[i])
 end
 
+# look at distances from mean and respective costs
 for i in 1:48
   println("ind $i cost is ", costs[i], "  and dist is ", dists[i])
 end
-ImageView.imshow(X_test)
+
+# outlier detection based on model uncertainty using the response_distribution function
 uncertainties = []
 for i in 1:48
   means, stddev = AutoLandmarking.response_distribution(model, gpu(X_test[:,:,:,i:i]), gpu(y_test[:,i:i]), 200)
   println("$i has uncevertaty", sum(stddev), "  and cost  ", costs[i])
   push!(uncertainties, sum(stddev))
 end
-
-maximum(uncertainties)-0.3*(maximum(uncertainties)-minimum(uncertainties))
-0.05*48
-
-response_conf1 = response_on_vol[:,findall(x->x<9.6, uncertainties)]
-y_test_conf1 = y_test[:,findall(x->x<9.6, uncertainties)]
-X_test_conf1 = X_test[:,:,:,findall(x->x<9.6, uncertainties)]
-y_test2_conf1 = y_test2[:,findall(x->x<9.6, uncertainties)]
-dists_conf1 = dists[findall(x->x<9.6, uncertainties)]
-names_conf1 = names_test[findall(x->x<9.6, uncertainties)]
-costs_conf1 = costs[findall(x->x<9.6, uncertainties)]
-accuracies_conf1 = accuracies[findall(x->x<9.6, uncertainties)]
-for i in 1:43
-  println("ind $i cost is ", costs_conf1[i], "  and dist is ", dists_conf1[i])
-end
-
-response_conf = response_conf1[:,findall(x->x<15.5, dists_conf1)]
-y_test_conf = y_test_conf1[:,findall(x->x<15.5, dists_conf1)]
-X_test_conf = X_test_conf1[:,:,:,findall(x->x<15.5, dists_conf1)]
-y_test2_conf = y_test2_conf1[:,findall(x->x<15.5, dists_conf1)]
-dists_conf = dists_conf1[findall(x->x<15.5, dists_conf1)]
-names_conf = names_conf1[findall(x->x<15.5, dists_conf1)]
-costs_conf = costs_conf1[findall(x->x<15.5, dists_conf1)]
-accuracies_conf = accuracies_conf1[findall(x->x<15.5, dists_conf1)]
-
-for i in 1:40
-  println("ind", names_conf[i], " cost is ", costs_conf[i], "  and dist is ", dists_conf[i])
-end
-
-maximum(accuracies_conf)
-
-is_hollow = zeros(243,1)
-is_hollow[143:end,1] .= 1
-is_hollow_test = []
-for i in 1:48
-  push!(is_hollow_test, is_hollow[i*5, 1])
-end
-is_hollow_conf = is_hollow_test[findall(x->x<9.5, uncertainties)]
-
-all_devs = zeros(40, 3)
-devs_per_point = zeros(40*10, 2)
-
-testmode!(model)
-for i in 1:40
-  all_devs[i,1] = accuracies_conf[i]
-  all_devs[i,2] = is_hollow_conf[i]
-  all_devs[i,3] = i
-end
-
-using Distances
-for i in 1:40
-  for j in 1:10
-    devs_per_point[(i-1)*10+j, 1] = euclidean(response_conf[j*3-2:j*3, i], y_test2_conf[j*3-2:j*3, i])
-    devs_per_point[(i-1)*10+j, 2] = j
-  end
-end
-
-out = hcat(all_devs, names_conf)
-
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/devs_per_ind.txt", out)
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/devs_per_point.txt", devs_per_point)
-
-# timing GPU : 28'000/min, CPU: 300/min
-@time begin
-  predict_set(gpu(X_train[:,:,:,1:100]), model)
-end
-
-response_out = swap_xy(response_conf)
-response_unconf = swap_xy(response_on_vol)
-
-AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/highest_conf.landmarkAscii", response_out[:,23])
-AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/worst_conf.landmarkAscii", response_out[:,37])
-AutoLandmarking.array_to_lm_file("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/worst_overall.landmarkAscii", response_unconf[:,26])
-names_conf[37]
-names_conf[23]
-names_out=cat(names, names_conf, dims=1)
-is_manual = zeros(1,283)
-is_manual[1,1:243].=1
-testingset = zeros(1,283)
-for i in 5:5:243
-  testingset[i] = 1
-end
-
-all_coords = cat(swap_xy(lms), response_out, dims=2)
-all_meta = hcat(names_out, is_manual', testingset')
-all_out = hcat(all_meta, all_coords')
-AutoLandmarking.change_values!(all_coords, 0.01, 0, <)
-findall(x->x==0, all_out[:,5])
-all_out = all_out[setdiff(1:283,217),:]
-
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/kept_predictions.txt", all_out[195:end, :])
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/training.txt", all_out[1:194])
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/all_teeth.txt", all_out)
-
-using CSV
-
-pc_scores = CSV.read("C:\\Users\\immanueldiener\\Desktop\\Master\\master_data\\testing_volumes\\pcs_all.txt")
-scores = zeros(1,282)
-
-scores[1,:] .= pc_scores[:,2]
-maximum(scores)
-all_out_mirror = deepcopy(all_out)
-
-for i in 1:282
-  if scores[1,i] <=0.0
-    for j in 1:10
-      all_out_mirror[i,2+j*3] = all_out[i, 2+j*3] *-1
-    end
-  end
-end
-
-
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/kept_predictions.txt", all_out_mirror[195:end, :])
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/training.txt", all_out_mirror[1:194])
-writedlm("C:/Users/immanueldiener/Desktop/Master/master_data/testing_volumes/all_teeth.txt", all_out_mirror)
-
-devs_points = zeros(10,40)
-for i in 1:40
-  for j in 1:10
-    devs_points[j, i] = devs_per_point[(i-1)*10+j, 1]
-  end
-end
-
-mean_devs = []
-for i in 1:10
-  push!(mean_devs, median(devs_points[i,:]))
-end
-
-mean_devs ./12.8
