@@ -6,7 +6,7 @@ This package is designed to help automate the landmarking process of 2D and 3D i
 
 ## Tutorial
 A typical workflow with a 3D dataset can be found in the [demo file](../master/demo.jl). Most functions work with either 2D or 3D data. If not, the package usually includes separate functions to handle either 2D or 3D data. The intended use case is always made clear in the name of the function. Detailed documentation is included with every function. The following image depicts a typical data pipeline for landmarked 2D and 3D images:
-![alt text](![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Data flow") "Data Flow")
+![alt text](https://github.com/imi-diener/AutoLandmarking.jl/blob/master/test/images/data_flow.jpg "Data flow")
 
 
 ## Landmark format
